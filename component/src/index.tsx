@@ -16,12 +16,12 @@ export type PdfSpotlightProps = {
     width?: number;
     height?: number;
   };
+  scaleMultiplier?: number;
 };
 
 export const PdfSpotlight = (props: PdfSpotlightProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
 
   const highlightText = async (
     pagePdf: any,
@@ -159,22 +159,28 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
             minHeight,
           );
 
+          // Use the scaleMultiplier prop or default to 2
+          const scaleMultiplier = props.scaleMultiplier ?? 2;
+
           // Calculate the scale based on the container width
           const containerWidth = containerRef.current.clientWidth;
-          const newScale = containerWidth / initialWidth;
-          setScale(newScale);
+          const newScale = (containerWidth / initialWidth) * scaleMultiplier;
 
-          // Set the final canvas size
-          canvasRef.current.width = initialWidth;
-          canvasRef.current.height = initialHeight;
+          // Set the final canvas size (scaled)
+          canvasRef.current.width = initialWidth * scaleMultiplier;
+          canvasRef.current.height = initialHeight * scaleMultiplier;
 
           const finalCtx = canvasRef.current.getContext("2d")!;
           const xOffset =
-            (initialWidth - (bounds.width + horizontalPadding * 2)) / 2;
+            (initialWidth * scaleMultiplier -
+              (bounds.width + horizontalPadding * 2) * scaleMultiplier) /
+            2;
           const yOffset =
-            (initialHeight - (bounds.height + verticalPadding * 2)) / 2;
+            (initialHeight * scaleMultiplier -
+              (bounds.height + verticalPadding * 2) * scaleMultiplier) /
+            2;
 
-          // Draw the cropped portion of the temp canvas onto the final canvas
+          // Draw the cropped portion of the temp canvas onto the final canvas (scaled up)
           finalCtx.drawImage(
             tempCanvas,
             +bounds.x - horizontalPadding, // source x
@@ -183,8 +189,8 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
             +bounds.height + verticalPadding * 2, // source height
             +xOffset, // dest x
             +yOffset, // dest y
-            +bounds.width + horizontalPadding * 2, // dest width
-            +bounds.height + verticalPadding * 2, // dest height
+            (+bounds.width + horizontalPadding * 2) * scaleMultiplier, // dest width (scaled)
+            (+bounds.height + verticalPadding * 2) * scaleMultiplier, // dest height (scaled)
           );
         }
       });
@@ -192,18 +198,16 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
     load();
   }, [props.url, props.searchFor, props.padding]);
 
-  useEffect(() => {
-    const handleResize = () => {
-      if (canvasRef.current && containerRef.current) {
-        const containerWidth = containerRef.current.clientWidth;
-        const newScale = containerWidth / canvasRef.current.width;
-        setScale(newScale);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  // useEffect(() => {
+  //   const handleResize = () => {
+  //     if (canvasRef.current && containerRef.current) {
+  //       const containerWidth = containerRef.current.clientWidth;
+  //     }
+  //   };
+  //
+  //   window.addEventListener("resize", handleResize);
+  //   return () => window.removeEventListener("resize", handleResize);
+  // }, []);
 
   return (
     <div ref={containerRef} style={{ width: "100%", overflow: "hidden" }}>

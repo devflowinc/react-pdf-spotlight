@@ -15,8 +15,8 @@ type ValueFindObject = {
   matching: string;
 };
 
-const __DEV__ = true;
-const debug = true;
+const __DEV__ = false;
+const debug = false;
 
 const parseKeyword = (word: string) => {
   let keyword = word.replace(/\n/g, " ").trim();

@@ -8,6 +8,7 @@ function App() {
     <>
       <div className="max-w-[400px]">
         <PdfSpotlight
+          scaleMultiplier={4}
           padding={{
             horizontal: 80,
             vertical: 100,
