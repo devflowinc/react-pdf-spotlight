@@ -198,17 +198,6 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
     load();
   }, [props.url, props.searchFor, props.padding]);
 
-  // useEffect(() => {
-  //   const handleResize = () => {
-  //     if (canvasRef.current && containerRef.current) {
-  //       const containerWidth = containerRef.current.clientWidth;
-  //     }
-  //   };
-  //
-  //   window.addEventListener("resize", handleResize);
-  //   return () => window.removeEventListener("resize", handleResize);
-  // }, []);
-
   return (
     <div ref={containerRef} style={{ width: "100%", overflow: "hidden" }}>
       <canvas
