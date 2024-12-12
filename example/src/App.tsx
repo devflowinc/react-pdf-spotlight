@@ -6,14 +6,16 @@ function App() {
 
   return (
     <>
-      <PdfSpotlight
-        padding={{
-          horizontal: 80,
-          vertical: 100,
-        }}
-        searchFor="project"
-        url="https://public.drewh.net/pdfs/projdesc.pdf"
-      />
+      <div className="max-w-[400px]">
+        <PdfSpotlight
+          padding={{
+            horizontal: 80,
+            vertical: 100,
+          }}
+          searchFor="project"
+          url="https://public.drewh.net/pdfs/projdesc.pdf"
+        />
+      </div>
       <h1 className="bg-blue-500">Vite + React</h1>
       <div className="card">
         <button onClick={() => setCount((count) => count + 1)}>

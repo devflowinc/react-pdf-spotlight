@@ -20,6 +20,8 @@ export type PdfSpotlightProps = {
 
 export const PdfSpotlight = (props: PdfSpotlightProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
 
   const highlightText = async (
     pagePdf: any,
@@ -141,29 +143,36 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
           scale: viewport.scale,
         });
 
-        if (bounds && canvasRef.current) {
+        if (bounds && canvasRef.current && containerRef.current) {
           const horizontalPadding = props.padding?.horizontal ?? 20;
           const verticalPadding = props.padding?.vertical ?? 20;
           const minWidth = props.minDimensions?.width ?? 0;
           const minHeight = props.minDimensions?.height ?? 0;
 
-          // Set the final canvas size to match the highlighted area plus padding
-          const finalWidth = Math.max(
+          // Calculate the initial dimensions
+          const initialWidth = Math.max(
             bounds.width + horizontalPadding * 2,
             minWidth,
           );
-          const finalHeight = Math.max(
+          const initialHeight = Math.max(
             bounds.height + verticalPadding * 2,
             minHeight,
           );
-          canvasRef.current.width = finalWidth;
-          canvasRef.current.height = finalHeight;
+
+          // Calculate the scale based on the container width
+          const containerWidth = containerRef.current.clientWidth;
+          const newScale = containerWidth / initialWidth;
+          setScale(newScale);
+
+          // Set the final canvas size
+          canvasRef.current.width = initialWidth;
+          canvasRef.current.height = initialHeight;
 
           const finalCtx = canvasRef.current.getContext("2d")!;
           const xOffset =
-            (finalWidth - (bounds.width + horizontalPadding * 2)) / 2;
+            (initialWidth - (bounds.width + horizontalPadding * 2)) / 2;
           const yOffset =
-            (finalHeight - (bounds.height + verticalPadding * 2)) / 2;
+            (initialHeight - (bounds.height + verticalPadding * 2)) / 2;
 
           // Draw the cropped portion of the temp canvas onto the final canvas
           finalCtx.drawImage(
@@ -183,9 +192,31 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
     load();
   }, [props.url, props.searchFor, props.padding]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (canvasRef.current && containerRef.current) {
+        const containerWidth = containerRef.current.clientWidth;
+        const newScale = containerWidth / canvasRef.current.width;
+        setScale(newScale);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
-    <div>
-      <canvas ref={canvasRef} />
+    <div ref={containerRef} style={{ width: "100%", overflow: "hidden" }}>
+      <canvas
+        style={{
+          width: "100%",
+          height: "auto",
+          // transform: `scale(${scale})`,
+          transformOrigin: "top left",
+        }}
+        className="border border-neutral-800"
+        ref={canvasRef}
+      />
     </div>
   );
 };
