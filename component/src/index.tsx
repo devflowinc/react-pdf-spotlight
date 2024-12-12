@@ -8,7 +8,14 @@ import { findObjects, makeSpacing } from "./utils";
 export type PdfSpotlightProps = {
   url: string;
   searchFor: string;
-  padding?: number; // padding around the highlighted area in pixels
+  padding?: {
+    horizontal?: number;
+    vertical?: number;
+  };
+  minDimensions?: {
+    width?: number;
+    height?: number;
+  };
 };
 
 export const PdfSpotlight = (props: PdfSpotlightProps) => {
@@ -135,25 +142,40 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
         });
 
         if (bounds && canvasRef.current) {
-          const padding = props.padding || 20;
+          const horizontalPadding = props.padding?.horizontal ?? 20;
+          const verticalPadding = props.padding?.vertical ?? 20;
+          const minWidth = props.minDimensions?.width ?? 0;
+          const minHeight = props.minDimensions?.height ?? 0;
 
           // Set the final canvas size to match the highlighted area plus padding
-          canvasRef.current.width = bounds.width + padding * 2;
-          canvasRef.current.height = bounds.height + padding * 2;
+          const finalWidth = Math.max(
+            bounds.width + horizontalPadding * 2,
+            minWidth,
+          );
+          const finalHeight = Math.max(
+            bounds.height + verticalPadding * 2,
+            minHeight,
+          );
+          canvasRef.current.width = finalWidth;
+          canvasRef.current.height = finalHeight;
 
           const finalCtx = canvasRef.current.getContext("2d")!;
+          const xOffset =
+            (finalWidth - (bounds.width + horizontalPadding * 2)) / 2;
+          const yOffset =
+            (finalHeight - (bounds.height + verticalPadding * 2)) / 2;
 
           // Draw the cropped portion of the temp canvas onto the final canvas
           finalCtx.drawImage(
             tempCanvas,
-            bounds.x - padding, // source x
-            bounds.y - padding, // source y
-            bounds.width + padding * 2, // source width
-            bounds.height + padding * 2, // source height
-            0, // dest x
-            0, // dest y
-            bounds.width + padding * 2, // dest width
-            bounds.height + padding * 2, // dest height
+            +bounds.x - horizontalPadding, // source x
+            +bounds.y - verticalPadding, // source y
+            +bounds.width + horizontalPadding * 2, // source width
+            +bounds.height + verticalPadding * 2, // source height
+            +xOffset, // dest x
+            +yOffset, // dest y
+            +bounds.width + horizontalPadding * 2, // dest width
+            +bounds.height + verticalPadding * 2, // dest height
           );
         }
       });

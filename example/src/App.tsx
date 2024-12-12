@@ -7,7 +7,10 @@ function App() {
   return (
     <>
       <PdfSpotlight
-        padding={40}
+        padding={{
+          horizontal: 80,
+          vertical: 100,
+        }}
         searchFor="project"
         url="https://public.drewh.net/pdfs/projdesc.pdf"
       />
