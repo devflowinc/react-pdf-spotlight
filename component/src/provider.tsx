@@ -1,6 +1,4 @@
-import { createContext, useEffect, useState, type ReactNode } from "react";
-import pdf from "pdfjs-dist";
-import { scripts } from "./scripts";
+import { createContext, type ReactNode } from "react";
 
 type PdfSpotlightProviderProps = {
   waitForLoad?: boolean;
