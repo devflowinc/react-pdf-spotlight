@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { TestComponent } from "react-pdf-spotlight";
+import { PdfSpotlight } from "react-pdf-spotlight";
 
 function App() {
   const [count, setCount] = useState(0);
 
   return (
     <>
-      <TestComponent />
+      <PdfSpotlight
+        searchFor="project"
+        url="https://public.drewh.net/pdfs/projdesc.pdf"
+      />
       <h1 className="bg-blue-500">Vite + React</h1>
       <div className="card">
         <button onClick={() => setCount((count) => count + 1)}>
