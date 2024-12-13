@@ -13,7 +13,7 @@ export const Cards = () => {
   );
 };
 
-const Card = ({ title, description, imageUrl }: any) => {
+const Card = ({ title, description }: any) => {
   return (
     <div className="bg-white shadow-md rounded-lg p-3 flex flex-col justify-between">
       <div className="justify-between">

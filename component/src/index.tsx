@@ -1,7 +1,7 @@
 import * as pdf from "pdfjs-dist";
-// @ts-ignore
-import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
-pdf.GlobalWorkerOptions.workerSrc = pdfWorker;
+
+pdf.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.worker.min.mjs`;
+
 import { useEffect, useRef, useState } from "react";
 import { findObjects, makeSpacing } from "./utils";
 
@@ -183,12 +183,12 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
           // Draw the cropped portion of the temp canvas onto the final canvas (scaled up)
           finalCtx.drawImage(
             tempCanvas,
-            +bounds.x - horizontalPadding, // source x
-            +bounds.y - verticalPadding, // source y
-            +bounds.width + horizontalPadding * 2, // source width
-            +bounds.height + verticalPadding * 2, // source height
-            +xOffset, // dest x
-            +yOffset, // dest y
+            bounds.x - horizontalPadding, // source x
+            bounds.y - verticalPadding, // source y
+            bounds.width + horizontalPadding * 2, // source width
+            bounds.height + verticalPadding * 2, // source height
+            xOffset, // dest x
+            yOffset, // dest y
             (+bounds.width + horizontalPadding * 2) * scaleMultiplier, // dest width (scaled)
             (+bounds.height + verticalPadding * 2) * scaleMultiplier, // dest height (scaled)
           );
