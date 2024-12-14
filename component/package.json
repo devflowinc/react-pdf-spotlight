@@ -2,7 +2,7 @@
   "name": "react-pdf-spotlight",
   "module": "index.ts",
   "type": "module",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
@@ -10,7 +10,8 @@
   ],
   "scripts": {
     "build": "node scripts/build.cjs",
-    "type:dts": "tsc"
+    "type:dts": "tsc",
+    "dev": "tsc --watch",
   },
   "exports": {
     ".": {

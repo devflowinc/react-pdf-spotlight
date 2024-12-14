@@ -22,6 +22,7 @@ const Card = ({ title, description }: any) => {
       </div>
       <div className="border border-neutral-400">
         <PdfSpotlight
+          page={1}
           padding={{
             horizontal: 80,
             vertical: 90,

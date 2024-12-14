@@ -2,7 +2,7 @@ import * as pdf from "pdfjs-dist";
 
 pdf.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.worker.min.mjs`;
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { findObjects, makeSpacing } from "./utils";
 
 export type PdfSpotlightProps = {
@@ -17,6 +17,9 @@ export type PdfSpotlightProps = {
     height?: number;
   };
   scaleMultiplier?: number;
+  page: number;
+  wrapStyle?: React.CSSProperties;
+  canvasStyle?: React.CSSProperties;
 };
 
 export const PdfSpotlight = (props: PdfSpotlightProps) => {
@@ -120,7 +123,7 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
     const load = async () => {
       const loading = pdf.getDocument({ url: props.url });
       const doc = await loading.promise;
-      doc.getPage(1).then(async (page) => {
+      doc.getPage(props.page).then(async (page) => {
         const viewport = page.getViewport({ scale: 1 });
         const tempCanvas = document.createElement("canvas");
         tempCanvas.height = viewport.height;
@@ -162,10 +165,6 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
           // Use the scaleMultiplier prop or default to 2
           const scaleMultiplier = props.scaleMultiplier ?? 2;
 
-          // Calculate the scale based on the container width
-          const containerWidth = containerRef.current.clientWidth;
-          const newScale = (containerWidth / initialWidth) * scaleMultiplier;
-
           // Set the final canvas size (scaled)
           canvasRef.current.width = initialWidth * scaleMultiplier;
           canvasRef.current.height = initialHeight * scaleMultiplier;
@@ -199,15 +198,17 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
   }, [props.url, props.searchFor, props.padding]);
 
   return (
-    <div ref={containerRef} style={{ width: "100%", overflow: "hidden" }}>
+    <div
+      ref={containerRef}
+      style={{ width: "100%", overflow: "hidden", ...props.wrapStyle }}
+    >
       <canvas
         style={{
           width: "100%",
           height: "auto",
-          // transform: `scale(${scale})`,
           transformOrigin: "top left",
+          ...props.canvasStyle,
         }}
-        className="border border-neutral-800"
         ref={canvasRef}
       />
     </div>
