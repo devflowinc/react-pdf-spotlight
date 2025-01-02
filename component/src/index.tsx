@@ -12,16 +12,11 @@ export type PdfSpotlightProps = {
     horizontal?: number;
     vertical?: number;
   };
-  minDimensions?: {
-    width?: number;
-    height?: number;
-  };
-  scaleMultiplier?: number;
   page: number;
   wrapStyle?: React.CSSProperties;
   canvasStyle?: React.CSSProperties;
   onFoundResult?: (found: boolean) => void;
-  height?: number;
+  height: number; // Height is now required
 };
 
 export const PdfSpotlight = (props: PdfSpotlightProps) => {
@@ -160,52 +155,62 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
 
         if (!bounds && props.onFoundResult) {
           props.onFoundResult(false);
+          return;
         }
 
         if (bounds && canvasRef.current && containerRef.current) {
           const horizontalPadding = props.padding?.horizontal ?? 20;
           const verticalPadding = props.padding?.vertical ?? 20;
-          const minWidth = props.minDimensions?.width ?? 0;
-          const minHeight = props.minDimensions?.height ?? 0;
 
-          // Calculate the initial dimensions
-          const initialWidth = Math.max(
-            bounds.width + horizontalPadding * 2,
-            minWidth,
-          );
-          const initialHeight = Math.max(
-            bounds.height + verticalPadding * 2,
-            minHeight,
-          );
+          // Calculate the aspect ratio of the highlighted area
+          const aspectRatio =
+            (bounds.width + horizontalPadding * 2) /
+            (bounds.height + verticalPadding * 2);
 
-          // Use the scaleMultiplier prop or default to 2
-          const scaleMultiplier = props.scaleMultiplier ?? 2;
-
-          // Set the final canvas size (scaled)
-          canvasRef.current.width = initialWidth * scaleMultiplier;
-          canvasRef.current.height = initialHeight * scaleMultiplier;
+          // Set the canvas dimensions
+          canvasRef.current.width = containerRef.current.clientWidth;
+          canvasRef.current.height = props.height;
 
           const finalCtx = canvasRef.current.getContext("2d")!;
-          const xOffset =
-            (initialWidth * scaleMultiplier -
-              (bounds.width + horizontalPadding * 2) * scaleMultiplier) /
-            2;
-          const yOffset =
-            (initialHeight * scaleMultiplier -
-              (bounds.height + verticalPadding * 2) * scaleMultiplier) /
-            2;
 
-          // Draw the cropped portion of the temp canvas onto the final canvas (scaled up)
+          // Clear the canvas
+          finalCtx.clearRect(
+            0,
+            0,
+            canvasRef.current.width,
+            canvasRef.current.height,
+          );
+
+          // Calculate the dimensions for drawing
+          let drawWidth, drawHeight, offsetX, offsetY;
+          if (
+            canvasRef.current.width / canvasRef.current.height >
+            aspectRatio
+          ) {
+            // Canvas is wider than needed
+            drawHeight = canvasRef.current.height;
+            drawWidth = drawHeight * aspectRatio;
+            offsetX = (canvasRef.current.width - drawWidth) / 2;
+            offsetY = 0;
+          } else {
+            // Canvas is taller than needed
+            drawWidth = canvasRef.current.width;
+            drawHeight = drawWidth / aspectRatio;
+            offsetX = 0;
+            offsetY = (canvasRef.current.height - drawHeight) / 2;
+          }
+
+          // Draw the cropped portion of the temp canvas onto the final canvas (scaled)
           finalCtx.drawImage(
             tempCanvas,
             bounds.x - horizontalPadding, // source x
             bounds.y - verticalPadding, // source y
             bounds.width + horizontalPadding * 2, // source width
             bounds.height + verticalPadding * 2, // source height
-            xOffset, // dest x
-            yOffset, // dest y
-            (+bounds.width + horizontalPadding * 2) * scaleMultiplier, // dest width (scaled)
-            (+bounds.height + verticalPadding * 2) * scaleMultiplier, // dest height (scaled)
+            offsetX, // dest x
+            offsetY, // dest y
+            drawWidth, // dest width
+            drawHeight, // dest height
           );
 
           if (props.onFoundResult) {
@@ -215,18 +220,23 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
       });
     };
     load();
-  }, [props.url, props.searchFor, props.padding]);
+  }, [props.url, props.searchFor, props.padding, props.height, props.page]);
 
   return (
     <div
       ref={containerRef}
-      style={{ width: "100%", overflow: "hidden", ...props.wrapStyle }}
+      style={{
+        width: "100%",
+        height: props.height,
+        overflow: "hidden",
+        ...props.wrapStyle,
+      }}
     >
       <canvas
         style={{
           width: "100%",
-          height: props.height || "auto",
-          transformOrigin: "top left",
+          height: "100%",
+          display: "block",
           ...props.canvasStyle,
         }}
         ref={canvasRef}
