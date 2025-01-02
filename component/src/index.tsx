@@ -20,6 +20,8 @@ export type PdfSpotlightProps = {
   page: number;
   wrapStyle?: React.CSSProperties;
   canvasStyle?: React.CSSProperties;
+  onFoundResult?: (found: boolean) => void;
+  height?: number;
 };
 
 export const PdfSpotlight = (props: PdfSpotlightProps) => {
@@ -32,11 +34,21 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
     ctx: CanvasRenderingContext2D,
     viewport: { width: number; height: number; scale: number },
   ) => {
-    if (!keyword) return;
+    if (!keyword) {
+      if (props.onFoundResult) {
+        props.onFoundResult(false);
+      }
+      return;
+    }
     const { items, styles } = await pagePdf.getTextContent();
     const findObject = findObjects(items, keyword);
     const { objects, begin: indexBegin, end } = findObject;
-    if (indexBegin < 0 || !objects.length) return;
+    if (indexBegin < 0 || !objects.length) {
+      if (props.onFoundResult) {
+        props.onFoundResult(false);
+      }
+      return;
+    }
 
     // Track the bounds of all highlighted areas
     let minX = Infinity;
@@ -146,6 +158,10 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
           scale: viewport.scale,
         });
 
+        if (!bounds && props.onFoundResult) {
+          props.onFoundResult(false);
+        }
+
         if (bounds && canvasRef.current && containerRef.current) {
           const horizontalPadding = props.padding?.horizontal ?? 20;
           const verticalPadding = props.padding?.vertical ?? 20;
@@ -191,6 +207,10 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
             (+bounds.width + horizontalPadding * 2) * scaleMultiplier, // dest width (scaled)
             (+bounds.height + verticalPadding * 2) * scaleMultiplier, // dest height (scaled)
           );
+
+          if (props.onFoundResult) {
+            props.onFoundResult(true);
+          }
         }
       });
     };
@@ -205,7 +225,7 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
       <canvas
         style={{
           width: "100%",
-          height: "auto",
+          height: props.height || "auto",
           transformOrigin: "top left",
           ...props.canvasStyle,
         }}
