@@ -8,15 +8,15 @@ function App() {
     <>
       <div className="max-w-[400px]">
         <PdfSpotlight
+          height={200}
           page={6}
-          scaleMultiplier={4}
           padding={{
             horizontal: 80,
             vertical: 100,
           }}
           searchFor="opening page"
           url={
-            "https://arguflow-s3bucket.s3.amazonaws.com/arguflow-s3bucket/43a9e311-59af-45f2-9674-b2ce7c92df9e?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIATYAYHRLGO765FEGX%2F20241221%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20241221T202033Z&X-Amz-Expires=6000&X-Amz-SignedHeaders=host&response-content-type=application%2Fpdf&response-content-disposition=attachment%3B%20filename%2A%3Dutf-8%27%27projdesc.pdf&X-Amz-Signature=e246bdae7d52552577f9138f67546e99917b8bdf768c7865be19edf3d2e53693"
+            "http://127.0.0.1:9000/trieve/44dce6b7-e984-4dbb-8948-a8b090206cf7?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ZaaZZaaZZaaZZaaZZaaZ%2F20250102%2F%2Fs3%2Faws4_request&X-Amz-Date=20250102T182542Z&X-Amz-Expires=6000&X-Amz-SignedHeaders=host&response-content-disposition=attachment%3B%20filename%2A%3Dutf-8%27%27projdescagainagain.pdf&response-content-type=application%2Fpdf&X-Amz-Signature=051b510ad543e50d78dc3398fb4431f3f514582f669934222b77825e16fd7d93"
           }
         />
       </div>

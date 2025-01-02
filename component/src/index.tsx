@@ -19,6 +19,8 @@ export type PdfSpotlightProps = {
   height: number; // Height is now required
 };
 
+export * from "./page-highlight";
+
 export const PdfSpotlight = (props: PdfSpotlightProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -162,10 +164,16 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
           const horizontalPadding = props.padding?.horizontal ?? 20;
           const verticalPadding = props.padding?.vertical ?? 20;
 
-          // Calculate the aspect ratio of the highlighted area
-          const aspectRatio =
-            (bounds.width + horizontalPadding * 2) /
-            (bounds.height + verticalPadding * 2);
+          // Calculate the padded bounds
+          const paddedBounds = {
+            x: bounds.x - horizontalPadding,
+            y: bounds.y - verticalPadding,
+            width: bounds.width + horizontalPadding * 2,
+            height: bounds.height + verticalPadding * 2,
+          };
+
+          // Calculate the aspect ratio of the padded area
+          const aspectRatio = paddedBounds.width / paddedBounds.height;
 
           // Set the canvas dimensions
           canvasRef.current.width = containerRef.current.clientWidth;
@@ -200,13 +208,13 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
             offsetY = (canvasRef.current.height - drawHeight) / 2;
           }
 
-          // Draw the cropped portion of the temp canvas onto the final canvas (scaled)
+          // Draw the padded portion of the temp canvas onto the final canvas (scaled)
           finalCtx.drawImage(
             tempCanvas,
-            bounds.x - horizontalPadding, // source x
-            bounds.y - verticalPadding, // source y
-            bounds.width + horizontalPadding * 2, // source width
-            bounds.height + verticalPadding * 2, // source height
+            paddedBounds.x, // source x
+            paddedBounds.y, // source y
+            paddedBounds.width, // source width
+            paddedBounds.height, // source height
             offsetX, // dest x
             offsetY, // dest y
             drawWidth, // dest width
