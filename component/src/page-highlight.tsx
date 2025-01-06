@@ -107,39 +107,71 @@ export const PdfPageHighlight = (props: PdfPageHighlightProps) => {
   };
 
   useEffect(() => {
-    const load = async () => {
-      const loading = pdf.getDocument({ url: props.url });
-      const doc = await loading.promise;
+    let isCurrentRender = true; // Track if this is the current render
 
-      doc.getPage(props.page).then(async (page) => {
+    const load = async () => {
+      try {
+        // Reset canvas if it exists
+        if (canvasRef.current) {
+          const ctx = canvasRef.current.getContext("2d")!;
+          ctx.clearRect(
+            0,
+            0,
+            canvasRef.current.width,
+            canvasRef.current.height,
+          );
+        }
+
+        const loading = pdf.getDocument({ url: props.url });
+        const doc = await loading.promise;
+        const page = await doc.getPage(props.page);
+
+        // Check if this is still the current render
+        if (!isCurrentRender) return;
+
         const scale = props.scale || 1;
         const viewport = page.getViewport({ scale });
 
         if (canvasRef.current && containerRef.current) {
+          // Set dimensions first
           canvasRef.current.height = viewport.height;
           canvasRef.current.width = viewport.width;
 
           const ctx = canvasRef.current.getContext("2d")!;
 
-          // Render the page
           const renderContext = {
             canvasContext: ctx,
             viewport: viewport,
           };
 
+          // Wait for render to complete
           await page.render(renderContext).promise;
 
-          // Highlight the text
-          await highlightText(page, props.searchFor, ctx, {
-            width: viewport.width,
-            height: viewport.height,
-            scale: viewport.scale,
-          });
+          // Check again if this is still the current render
+          if (!isCurrentRender) return;
+
+          // Optional: wait a frame to ensure rendering is complete
+          await new Promise(requestAnimationFrame);
+
+          if (props.searchFor) {
+            await highlightText(page, props.searchFor, ctx, {
+              width: viewport.width,
+              height: viewport.height,
+              scale: viewport.scale,
+            });
+          }
         }
-      });
+      } catch (error) {
+        console.error("Error rendering PDF:", error);
+      }
     };
 
     load();
+
+    // Cleanup function
+    return () => {
+      isCurrentRender = false;
+    };
   }, [props.url, props.searchFor, props.page, props.scale]);
 
   return (
