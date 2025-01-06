@@ -29,18 +29,15 @@ export const PdfPageHighlight = (props: PdfPageHighlightProps) => {
       }
       return;
     }
-
     const { items, styles } = await pagePdf.getTextContent();
     const findObject = findObjects(items, keyword);
     const { objects, begin: indexBegin, end } = findObject;
-
     if (indexBegin < 0 || !objects.length) {
       if (props.onFoundResult) {
         props.onFoundResult(false);
       }
       return;
     }
-
     const colorHighlight = "#ff00f0";
     let indexSub = indexBegin;
 
@@ -48,10 +45,11 @@ export const PdfPageHighlight = (props: PdfPageHighlightProps) => {
       const object = objects[index];
       const str = object.str;
       const style = styles[object.fontName];
-
       ctx.save();
       ctx.beginPath();
-      ctx.font = `${object.transform[3] * viewport.scale}px ${style.fontFamily}`;
+
+      const fontSize = object.transform[3] * viewport.scale;
+      ctx.font = `${fontSize}px ${style.fontFamily}`;
 
       const spacing = makeSpacing(
         object.width,
@@ -61,40 +59,47 @@ export const PdfPageHighlight = (props: PdfPageHighlightProps) => {
         0.3,
         0,
       ) as number;
+
       (ctx as any).letterSpacing = `${spacing}px`;
 
       let w1 = 0;
       let w2 = 0;
 
       if (!index) {
+        // For first object, measure the text before the highlight
         w1 = ctx.measureText(str.substring(0, indexSub)).width;
-        w2 = ctx.measureText(
-          str.substring(indexSub + keyword.length, str.length),
-        ).width;
-      } else if (index === objects.length - 1) {
-        const textEnd = str.slice(end, str.length);
-        w2 = ctx.measureText(textEnd).width;
       }
 
-      const w = (object.width - (w1 + w2) / viewport.scale) * viewport.scale;
-      const x = Math.floor(object.transform[4] + w1 / viewport.scale);
+      // Calculate the width of the highlighted portion
+      let highlightWidth;
+      if (objects.length === 1) {
+        // Single object case
+        highlightWidth = ctx.measureText(
+          str.substring(indexSub, indexSub + keyword.length),
+        ).width;
+      } else if (index === 0) {
+        // First object in multi-object case
+        highlightWidth = ctx.measureText(str.substring(indexSub)).width;
+      } else if (index === objects.length - 1) {
+        // Last object in multi-object case
+        highlightWidth = ctx.measureText(str.substring(0, end)).width;
+      } else {
+        // Middle objects in multi-object case
+        highlightWidth = ctx.measureText(str).width;
+      }
+
+      // Calculate position accounting for scale
+      const x = object.transform[4] * viewport.scale + w1;
       const y =
         viewport.height -
-        object.transform[5] -
-        object.height +
-        style.ascent -
-        style.descent;
+        object.transform[5] * viewport.scale -
+        object.height * viewport.scale;
 
       ctx.fillStyle = colorHighlight;
       ctx.globalAlpha = 0.2;
 
-      // Draw highlight
-      ctx.fillRect(
-        x * viewport.scale - viewport.scale / 2,
-        y * viewport.scale,
-        w,
-        object.height * viewport.scale,
-      );
+      // Draw highlight with scaled dimensions
+      ctx.fillRect(x, y, highlightWidth, object.height * viewport.scale);
 
       ctx.closePath();
       ctx.restore();
