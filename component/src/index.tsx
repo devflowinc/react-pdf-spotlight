@@ -30,7 +30,7 @@ type Bounds = {
 };
 
 export const PdfSpotlight = (props: PdfSpotlightProps) => {
-  const tempCanvas = useRef<HTMLCanvasElement | null>(null);
+  const tempCanvas = useRef<OffscreenCanvas | null>(null);
   const boundsRef = useRef<Bounds | undefined>(undefined);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -38,7 +38,7 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
   const highlightText = async (
     pagePdf: any,
     keyword: string,
-    ctx: CanvasRenderingContext2D,
+    ctx: OffscreenCanvasRenderingContext2D,
     viewport: { width: number; height: number; scale: number },
   ) => {
     if (!keyword) {
@@ -148,9 +148,10 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
       doc.getPage(props.page).then(async (page) => {
         const viewport = page.getViewport({ scale: 1 });
         if (!tempCanvas.current) {
-          tempCanvas.current = document.createElement("canvas");
-          tempCanvas.current.height = viewport.height;
-          tempCanvas.current.width = viewport.width;
+          tempCanvas.current = new OffscreenCanvas(
+            viewport.width,
+            viewport.height,
+          );
 
           // First render the full page to a temporary canvas
           const tempCtx = tempCanvas.current.getContext("2d")!;
@@ -159,7 +160,7 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
             viewport: viewport,
           };
 
-          const task = page.render(renderContext);
+          const task = page.render(renderContext as any);
           await task.promise;
 
           boundsRef.current = await highlightText(

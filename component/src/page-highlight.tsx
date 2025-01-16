@@ -2,6 +2,7 @@ import * as pdf from "pdfjs-dist";
 pdf.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.worker.min.mjs`;
 import { useEffect, useRef } from "react";
 import { findObjects, makeSpacing } from "./utils";
+import { cached } from "./cache";
 
 export type PdfPageHighlightProps = {
   url: string;
@@ -127,8 +128,10 @@ export const PdfPageHighlight = (props: PdfPageHighlightProps) => {
           );
         }
 
-        const loading = pdf.getDocument({ url: props.url });
-        const doc = await loading.promise;
+        const doc = await cached(
+          async () => pdf.getDocument({ url: props.url }).promise,
+          `doc${props.url}`,
+        );
         const page = await doc.getPage(props.page);
 
         // Check if this is still the current render
@@ -155,7 +158,6 @@ export const PdfPageHighlight = (props: PdfPageHighlightProps) => {
           // Check again if this is still the current render
           if (!isCurrentRender) return;
 
-          // Optional: wait a frame to ensure rendering is complete
           await new Promise(requestAnimationFrame);
 
           if (props.searchFor) {

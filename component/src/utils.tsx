@@ -167,7 +167,7 @@ export const makeSpacing = (
   width: number,
   str: string,
   scale: number,
-  ctx: CanvasRenderingContext2D,
+  ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D,
   spacing: number,
   indexLoop: number,
 ): number => {
