@@ -4,6 +4,7 @@ pdf.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.
 
 import { useEffect, useRef } from "react";
 import { findObjects, makeSpacing } from "./utils";
+import { cached } from "./cache";
 
 export type PdfSpotlightProps = {
   url: string;
@@ -21,7 +22,16 @@ export type PdfSpotlightProps = {
 
 export * from "./page-highlight";
 
+type Bounds = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 export const PdfSpotlight = (props: PdfSpotlightProps) => {
+  const tempCanvas = useRef<HTMLCanvasElement | null>(null);
+  const boundsRef = useRef<Bounds | undefined>(undefined);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -37,6 +47,7 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
       }
       return;
     }
+    // This is the slow line!
     const { items, styles } = await pagePdf.getTextContent();
     const findObject = findObjects(items, keyword);
     const { objects, begin: indexBegin, end } = findObject;
@@ -130,46 +141,54 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
 
   useEffect(() => {
     const load = async () => {
-      const loading = pdf.getDocument({ url: props.url });
-      const doc = await loading.promise;
+      const doc = await cached(
+        async () => pdf.getDocument({ url: props.url }).promise,
+        `doc${props.url}`,
+      );
       doc.getPage(props.page).then(async (page) => {
         const viewport = page.getViewport({ scale: 1 });
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.height = viewport.height;
-        tempCanvas.width = viewport.width;
+        if (!tempCanvas.current) {
+          tempCanvas.current = document.createElement("canvas");
+          tempCanvas.current.height = viewport.height;
+          tempCanvas.current.width = viewport.width;
 
-        // First render the full page to a temporary canvas
-        const tempCtx = tempCanvas.getContext("2d")!;
-        const renderContext = {
-          canvasContext: tempCtx,
-          viewport: viewport,
-        };
+          // First render the full page to a temporary canvas
+          const tempCtx = tempCanvas.current.getContext("2d")!;
+          const renderContext = {
+            canvasContext: tempCtx,
+            viewport: viewport,
+          };
 
-        const task = page.render(renderContext);
-        await task.promise;
+          const task = page.render(renderContext);
+          await task.promise;
 
-        // Highlight the text and get the bounds
-        const bounds = await highlightText(page, props.searchFor, tempCtx, {
-          width: viewport.width,
-          height: viewport.height,
-          scale: viewport.scale,
-        });
+          boundsRef.current = await highlightText(
+            page,
+            props.searchFor,
+            tempCtx,
+            {
+              width: viewport.width,
+              height: viewport.height,
+              scale: viewport.scale,
+            },
+          );
 
-        if (!bounds && props.onFoundResult) {
-          props.onFoundResult(false);
-          return;
+          if (!boundsRef.current && props.onFoundResult) {
+            props.onFoundResult(false);
+            return;
+          }
         }
 
-        if (bounds && canvasRef.current && containerRef.current) {
+        if (boundsRef.current && canvasRef.current && containerRef.current) {
           const horizontalPadding = props.padding?.horizontal ?? 20;
           const verticalPadding = props.padding?.vertical ?? 20;
 
           // Calculate the padded bounds
           const paddedBounds = {
-            x: bounds.x - horizontalPadding,
-            y: bounds.y - verticalPadding,
-            width: bounds.width + horizontalPadding * 2,
-            height: bounds.height + verticalPadding * 2,
+            x: boundsRef.current.x - horizontalPadding,
+            y: boundsRef.current.y - verticalPadding,
+            width: boundsRef.current.width + horizontalPadding * 2,
+            height: boundsRef.current.height + verticalPadding * 2,
           };
 
           // Calculate the aspect ratio of the padded area
@@ -210,7 +229,7 @@ export const PdfSpotlight = (props: PdfSpotlightProps) => {
 
           // Draw the padded portion of the temp canvas onto the final canvas (scaled)
           finalCtx.drawImage(
-            tempCanvas,
+            tempCanvas.current,
             paddedBounds.x, // source x
             paddedBounds.y, // source y
             paddedBounds.width, // source width
